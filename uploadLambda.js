@@ -3,7 +3,7 @@ const s3 = new AWS.S3();
 
 const BUCKET_NAME = process.env.FILE_UPLOAD_BUCKET_NAME;
 
-exports.handler = async (event) => {
+exports.handler = async (event)  => {
     console.log(event);
 
     const response = {
@@ -17,14 +17,12 @@ exports.handler = async (event) => {
     try{
         const parseBody = JSON.parse(event.body);
         const base64File = parsedBody.file;
-        console.log("recieving image file ______________")
-        //const decodedFile = Buffer.from(base64File.replace(/^data:image\/\w+;base64,/,""), "base64");
-        const decodedFile = Buffer.from(base64File);
+        const decodedFile = Buffer.from(base64File.replace(/^data:image\/\w+;base64,/,""), "base64");
         const params = {
             Bucket: BUCKET_NAME,
             Key: `images/${new Date().toISOString()}.*`,
             Body: decodedFile,
-            ContentType: "image/*"
+            ContentType: "image/jpeg"
         };
 
         const uploadResult = await s3.upload(params).promise();

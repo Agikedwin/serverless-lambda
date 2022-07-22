@@ -1,0 +1,47 @@
+
+service: s3-file-upload-edu
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: eu-west-1
+  stage: dev
+ 
+custom:
+  fileUploadBucketName: ${self:service}-bucket-${self:provider.stage}
+
+plugins:
+  - serverless-iam-roles-per-function
+
+
+
+functions:
+  s3FileUploader:
+    handler: upload.handler
+    name: s3-file-upload-edu
+    description: A lambda function that uploads a file to S3 bucked based on API trigger
+    timeout: 60 # seconds
+    memorySize: 128 #mb
+    events:
+      - http:
+          path: images
+          method: POST
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - "s3:Put*"
+        Resource: arn:aws:s3:::${self:custom.fileUploadBucketName}/*
+    environment: 
+      FILE_UPLOAD_BUCKET_NAME: ${self:custom.fileUploadBucketName}
+
+
+
+
+resources:
+  Resources:
+    FileBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.fileUploadBucketName}
+        AccessControl: PublicRead
+
