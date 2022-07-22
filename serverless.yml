@@ -51,18 +51,18 @@ functions:
   
 
   s3FileDelete:
-  handler: deleteLambda.handler
-  name: s3-file-delete
-  description: A lambda function that uploads a file to S3 bucked based on API triggers
-  events:
-    - http:
-        path: file/{fileKey}
-        method: DELETE
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - "s3:DeleteObject"
-      Resource: arn:aws:s3:::${self:custom.fileBucketName}/*
+    handler: deleteLambda.handler
+    name: s3-file-delete
+    description: A lambda function that uploads a file to S3 bucked based on API triggers
+    events:
+      - http:
+          path: file/{fileKey}
+          method: DELETE
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - "s3:DeleteObject"
+        Resource: arn:aws:s3:::${self:custom.fileBucketName}/*
 
   
 

@@ -8,21 +8,19 @@ exports.handler = async (event)  => {
 
     const response = {
         isBase64Encoded: false,
-        statusCode: 200,
-        body: JSON.stringify({
-            message: "Successfully uploaded the file to S3 bucket"
-        })
-    }
+        statusCode: 200
+    };
 
     try{
-        const parseBody = JSON.parse(event.body);
+        const parsedBody = JSON.parse(event.body);
+        console.log("== parsed body :: ", parsedBody)
         const base64File = parsedBody.file;
         const decodedFile = Buffer.from(base64File.replace(/^data:image\/\w+;base64,/,""), "base64");
         const params = {
             Bucket: BUCKET_NAME,
-            Key: `images/${new Date().toISOString()}.*`,
+            Key: parsedBody.fileKey,
             Body: decodedFile,
-            ContentType: "image/jpeg"
+            ContentType: "image/*"
         };
 
         const uploadResult = await s3.upload(params).promise();
@@ -38,5 +36,6 @@ exports.handler = async (event)  => {
         response.statusCode =500;
 
     }
-
+    
+    return response;
 }
