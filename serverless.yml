@@ -1,78 +1,109 @@
 
-service: s3-file-upload-agikedu
+service: dynamodb-crud-api
 
 provider:
   name: aws
   runtime: nodejs12.x
   region: eu-west-1
   stage: dev
-  apiName: ${self:service}
-  memorySize: 128 #mb
-  timeout: 60 #seconds
-  environment: 
-    FILE_UPLOAD_BUCKET_NAME: ${self:custom.fileBucketName}
- 
+  environment:
+    DYNAMODB_TABLE_NAME: ${self:custom.postTableName}
+
 custom:
-  fileBucketName: ${self:service}-bucket-${self:provider.stage}
+  postTableName: post-table-${self:provider.stage}
 
 plugins:
   - serverless-iam-roles-per-function
 
-
-
 functions:
-  s3FileUploader:
-    handler: uploadLambda.handler
-    name: s3-file-upload
-    description: A lambda function that uploads a file to S3 bucked based on API triggers
+  getPost:
+    handler: src/api.getPost
+    name: get-post
+    memorySize: 128
+    timeout: 5
     events:
-      - http:
-          path: file
-          method: POST
+    - http:
+        path:  post/{postId}
+        method: GET
     iamRoleStatements:
-      - Effect: Allow
+      - Effect: "Allow"
         Action:
-          - "s3:Put*"
-        Resource: arn:aws:s3:::${self:custom.fileBucketName}/*
-    
-  s3FileUpGet:
-    handler: getLambda.handler
-    name: s3-file-get
-    description: A lambda function that uploads a file to S3 bucked based on API triggers
+          - "dynamodb:GetItem"
+        Resource: !GetAtt PostsTable.Arn
+
+  createPosts:
+    handler: src/api.createPost
+    name: create-post
+    memorySize: 128
+    timeout: 5
     events:
-      - http:
-          path: file/{fileKey}
-          method: GET
+    - http:
+        path: post
+        method: POST
     iamRoleStatements:
-      - Effect: Allow
+      - Effect: "Allow"
         Action:
-          - "s3:Get*"
-        Resource: arn:aws:s3:::${self:custom.fileBucketName}/*
-  
+          - "dynamodb:PutItem"
+        Resource: !GetAtt PostsTable.Arn
 
-  s3FileDelete:
-    handler: deleteLambda.handler
-    name: s3-file-delete
-    description: A lambda function that uploads a file to S3 bucked based on API triggers
+  updatePosts:
+    handler: src/api.updatePost
+    name: update-posts
+    memorySize: 128
+    timeout: 5
     events:
-      - http:
-          path: file/{fileKey}
-          method: DELETE
+    - http:
+        path: post/{postId}
+        method: PUT
     iamRoleStatements:
-      - Effect: Allow
+      - Effect: "Allow"
         Action:
-          - "s3:DeleteObject"
-        Resource: arn:aws:s3:::${self:custom.fileBucketName}/*
+          - "dynamodb:UpdateItem"
+        Resource: !GetAtt PostsTable.Arn
 
+  deletePosts:
+    handler: src/api.deletePost
+    name: delete-post
+    memorySize: 128
+    timeout: 5
+    events:
+    - http:
+        path: post/{postId}
+        method: DELETE
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:DeleteItem"
+        Resource: !GetAtt PostsTable.Arn
+
+  getAllPosts:
+    handler: src/api.getAllPosts
+    name: get-all-posts
+    memorySize: 128
+    timeout: 5
+    events:
+    - http:
+        path: post
+        method: GET
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:Scan"
+        Resource: !GetAtt PostsTable.Arn
   
-
-  
-
 resources:
   Resources:
-    FileBucket:
-      Type: AWS::S3::Bucket
+    PostsTable:
+      Type: AWS::DynamoDB::Table
       Properties:
-        BucketName: ${self:custom.fileBucketName}
-        AccessControl: Private
-
+        TableName: ${self:custom.postTableName}
+        AttributeDefinitions:
+        - AttributeName: postId
+          AttributeType: S
+        KeySchema:
+        - AttributeName: postId
+          KeyType: HASH
+        ProvisionedThroughput: 
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        

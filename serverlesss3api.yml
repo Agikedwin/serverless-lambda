@@ -1,0 +1,79 @@
+
+
+service: s3-file-upload-agikedu
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: eu-west-1
+  stage: dev
+  apiName: ${self:service}
+  memorySize: 128 #mb
+  timeout: 60 #seconds
+  environment: 
+    FILE_UPLOAD_BUCKET_NAME: ${self:custom.fileBucketName}
+ 
+custom:
+  fileBucketName: ${self:service}-bucket-${self:provider.stage}
+
+plugins:
+  - serverless-iam-roles-per-function
+
+
+
+functions:
+  s3FileUploader:
+    handler: uploadLambda.handler
+    name: s3-file-upload
+    description: A lambda function that uploads a file to S3 bucked based on API triggers
+    events:
+      - http:
+          path: file
+          method: POST
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - "s3:Put*"
+        Resource: arn:aws:s3:::${self:custom.fileBucketName}/*
+    
+  s3FileUpGet:
+    handler: getLambda.handler
+    name: s3-file-get
+    description: A lambda function that uploads a file to S3 bucked based on API triggers
+    events:
+      - http:
+          path: file/{fileKey}
+          method: GET
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - "s3:Get*"
+        Resource: arn:aws:s3:::${self:custom.fileBucketName}/*
+  
+
+  s3FileDelete:
+    handler: deleteLambda.handler
+    name: s3-file-delete
+    description: A lambda function that uploads a file to S3 bucked based on API triggers
+    events:
+      - http:
+          path: file/{fileKey}
+          method: DELETE
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - "s3:DeleteObject"
+        Resource: arn:aws:s3:::${self:custom.fileBucketName}/*
+
+  
+
+  
+
+resources:
+  Resources:
+    FileBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.fileBucketName}
+        AccessControl: Private
+

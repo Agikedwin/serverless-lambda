@@ -1,0 +1,28 @@
+
+service: backup-dynamodb-database
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: eu-west-1
+  stage: dev
+  iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - "dynamodb:CreateBackup"
+        Resource: "*"
+
+
+functions:
+  backupDynamoDB:
+    handler: src/backup.handler
+    name: backup-dynamodb
+    description: A lambda function that that backup dynamodb
+    memorySize: 128 #mb
+    timeout: 25 #seconds 
+    events:
+      - schedule: rate(3 minutes) # cron(0 17 * * *)
+    environment:
+      DYNAMODB_TABLE_NAME: import-data
+      
+    
